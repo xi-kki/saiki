@@ -1,443 +1,187 @@
 'use client';
 
-import { useState, useRef } from 'react';
-import { motion, useScroll, useTransform } from 'framer-motion';
-import { Sparkles, ArrowRight, BookOpen, Brain, Map, Microscope, Zap, Eye, Moon } from 'lucide-react';
-import Header from '@/components/Header';
-import TipCard from '@/components/TipCard';
-import StreakBar from '@/components/StreakBar';
-import QuoteHero from '@/components/QuoteHero';
-import CategoryTabs from '@/components/CategoryTabs';
-import type { ContentCategory } from '@/lib/utils';
+import { useState, useEffect, useRef } from 'react';
+import Link from 'next/link';
+import { motion } from 'framer-motion';
+import { ArrowRight, X } from 'lucide-react';
 
-// Demo data — sharp, clear, insightful "shots"
-const demoTips = [
-  {
-    id: '1',
-    title: 'The Dichotomy of Control',
-    content: 'Epictetus taught that some things are within our control and others are not. Our opinions, desires, and aversions are up to us. Our bodies, possessions, and reputations are not. Freedom comes from focusing only on what you can control.',
-    summary: 'Focus only on what you can control — your thoughts, actions, and character.',
-    school: 'stoicism',
-    thinker: 'Epictetus',
-    source: 'Enchiridion',
-    category: 'philosophy',
-    likes: 42,
-    views: 180,
-  },
-  {
-    id: '2',
-    title: 'Inversion: Think Backwards',
-    content: 'Instead of asking "How do I succeed?", ask "How do I fail?" Then avoid those things. Carl Jacobi said "Invert, always invert." Most people focus on what they want. The smartest focus on what they want to avoid.',
-    summary: 'Invert the problem. Instead of asking how to succeed, ask how to fail — then avoid that.',
-    school: 'inversion',
-    thinker: 'Charlie Munger',
-    source: "Poor Charlie's Almanack",
-    category: 'mental-model',
-    likes: 67,
-    views: 312,
-  },
-  {
-    id: '3',
-    title: 'The Experience Machine',
-    content: 'Robert Nozick asked: If you could plug into a machine that gives you any experience you desire — perfect love, endless adventure, total fulfillment — would you do it? Most people say no. Why? Because we value actually doing things, not just the experience of doing them.',
-    summary: 'Would you plug into a machine that gives perfect experiences? Most say no — revealing we value reality over pleasure.',
-    school: 'experience-machine',
-    thinker: 'Robert Nozick',
-    source: 'Anarchy, State, and Utopia',
-    category: 'thought-experiment',
-    likes: 55,
-    views: 230,
-  },
-  {
-    id: '4',
-    title: 'The Dunning-Kruger Effect',
-    content: 'People who are incompetent at something are unable to recognize their own incompetence. They don\'t know what they don\'t know. Meanwhile, experts underestimate their abilities. The less you know, the more you think you know.',
-    summary: 'The less you know, the more you think you know. The more you know, the more you realize you don\'t.',
-    school: 'cognitive-biases',
-    thinker: 'Dunning & Kruger',
-    source: 'Journal of Personality and Social Psychology (1999)',
-    category: 'meta-thinking',
-    likes: 89,
-    views: 445,
-  },
-  {
-    id: '5',
-    title: 'The Marshmallow Test',
-    content: 'In the 1960s, Walter Mischel gave children a marshmallow. They could eat it now, or wait 15 minutes and get two. The kids who waited went on to have higher SAT scores, lower BMI, better social skills, and lower rates of addiction.',
-    summary: 'Children who could delay gratification had better life outcomes across every metric measured.',
-    school: 'marshmallow',
-    thinker: 'Walter Mischel',
-    source: 'Stanford Marshmallow Experiment (1972)',
-    category: 'empirical',
-    likes: 73,
-    views: 380,
-  },
-  {
-    id: '6',
-    title: 'The Subconscious Runs the Show',
-    content: 'Your subconscious mind processes 11 million bits of information per second. Your conscious mind? Only 50. You are not running your life — your subconscious is. Habits, biases, emotional reactions, even your "gut feelings" — all subconscious. The goal isn\'t to control it, but to reprogram it through repetition, visualization, and awareness.',
-    summary: 'Your subconscious processes 11 million bits/sec. Your conscious mind? Only 50. You\'re not running your life — your habits are.',
-    school: 'subconscious',
-    thinker: 'Dr. Joseph Murphy',
-    source: 'The Power of Your Subconscious Mind',
-    category: 'mind',
-    likes: 94,
-    views: 510,
-  },
-];
+// ─── useTypewriter ───────────────────────────────────────
+function useTypewriter(text: string, speed = 38, delay = 600) {
+  const [displayed, setDisplayed] = useState('');
+  const [done, setDone] = useState(false);
 
-export default function HomePage() {
-  const [category, setCategory] = useState<ContentCategory | 'all'>('all');
-  const heroRef = useRef(null);
-  const { scrollYProgress } = useScroll({ target: heroRef, offset: ['start start', 'end start'] });
-  const heroOpacity = useTransform(scrollYProgress, [0, 0.5], [1, 0]);
-  const heroY = useTransform(scrollYProgress, [0, 0.5], [0, -200]);
-  const tips = category === 'all' ? demoTips : demoTips.filter((t) => t.category === category);
+  useEffect(() => {
+    let timeout: NodeJS.Timeout;
+    let interval: NodeJS.Timeout;
+
+    timeout = setTimeout(() => {
+      let i = 0;
+      interval = setInterval(() => {
+        if (i < text.length) {
+          setDisplayed(text.slice(0, i + 1));
+          i++;
+        } else {
+          clearInterval(interval);
+          setDone(true);
+        }
+      }, speed);
+    }, delay);
+
+    return () => { clearTimeout(timeout); clearInterval(interval); };
+  }, [text, speed, delay]);
+
+  return { displayed, done };
+}
+
+// ─── Navbar ──────────────────────────────────────────────
+function Navbar() {
+  const [menuOpen, setMenuOpen] = useState(false);
 
   return (
-    <div className="min-h-screen bg-black">
-      <Header streak={7} />
+    <header className="fixed top-0 inset-x-0 z-20 px-5 sm:px-8 py-4 sm:py-5 flex justify-between items-center">
+      <Link href="/" className="flex items-center">
+        <span className="text-[21px] sm:text-[26px] tracking-tight text-white font-medium select-none">
+          Saiki<span className="text-[#c9a84c]">&reg;</span>
+        </span>
+      </Link>
 
-      {/* ═══════════════════════════════════════════════════════
-          HERO — "Sharpen Your Mind in a Distracted World"
-          Based on Mindloop prompt, adapted for Saiki
-         ═══════════════════════════════════════════════════════ */}
-      <section ref={heroRef} className="relative min-h-screen overflow-hidden">
-        {/* Background gradient orbs */}
-        <div className="absolute inset-0 z-0">
-          <div className="absolute top-1/4 left-1/4 h-96 w-96 rounded-full bg-saiki-accent/5 blur-[120px]" />
-          <div className="absolute bottom-1/4 right-1/4 h-96 w-96 rounded-full bg-purple-500/5 blur-[120px]" />
-        </div>
+      <nav className="hidden md:flex items-center gap-2 text-[15px] text-white/70">
+        <Link href="/history" className="hover:text-white transition-colors duration-200">Explore</Link>
+        <span className="opacity-30">·</span>
+        <Link href="/favorites" className="hover:text-white transition-colors duration-200">Saved</Link>
+        <span className="opacity-30">·</span>
+        <Link href="/profile" className="hover:text-white transition-colors duration-200">Profile</Link>
+        <span className="opacity-30">·</span>
+        <Link href="/tip/1" className="hover:text-white transition-colors duration-200">Today</Link>
+      </nav>
 
-        {/* Hero Content */}
-        <motion.div
-          style={{ opacity: heroOpacity, y: heroY }}
-          className="relative z-10 flex min-h-screen flex-col items-center justify-center px-6 text-center"
-        >
-          {/* Badge */}
-          <motion.div
-            initial={{ opacity: 0, y: 10 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.5 }}
-            className="liquid-glass mb-8 rounded-full px-4 py-2"
-          >
-            <span className="flex items-center gap-2 text-sm text-white/80">
-              <span className="rounded-md bg-white px-2 py-0.5 text-xs font-medium text-black">New</span>
-              Philosophy · Psychology · Mental Models · Mind Science
-            </span>
-          </motion.div>
+      <Link href="/history" className="hidden md:flex items-center gap-2 text-[15px] text-white hover:text-[#c9a84c] transition-colors duration-200">
+        Start Thinking <ArrowRight size={14} />
+      </Link>
 
-          {/* Headline */}
-          <motion.h1
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.6, delay: 0.1 }}
-            className="text-5xl font-medium tracking-[-2px] text-white sm:text-7xl md:text-8xl"
-            style={{ fontFamily: "'Instrument Serif', Georgia, serif", lineHeight: 1.1 }}
-          >
-            Sharpen Your Mind
-            <br />
-            <span className="text-white/60" style={{ fontFamily: "'Instrument Serif', Georgia, serif", fontStyle: 'italic' }}>
-              in a Distracted World
-            </span>
-          </motion.h1>
+      <button onClick={() => setMenuOpen(!menuOpen)} className="md:hidden flex flex-col items-center justify-center w-10 h-10 gap-[5px]" aria-label="Toggle menu">
+        <span className={`block w-6 h-[2px] bg-white transition-all duration-300 ${menuOpen ? 'rotate-45 translate-y-[7px]' : ''}`} />
+        <span className={`block w-6 h-[2px] bg-white transition-all duration-300 ${menuOpen ? 'opacity-0' : ''}`} />
+        <span className={`block w-6 h-[2px] bg-white transition-all duration-300 ${menuOpen ? '-rotate-45 -translate-y-[7px]' : ''}`} />
+      </button>
 
-          {/* Subtitle */}
-          <motion.p
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.6, delay: 0.2 }}
-            className="mt-8 max-w-2xl text-lg leading-relaxed text-white/70"
-          >
-            Daily shots of philosophy, psychology, mental models, and empirical truth.
-            <br />
-            Built for deep thinkers who refuse to let their minds go soft.
-          </motion.p>
-
-          {/* CTA */}
-          <motion.a
-            href="#daily-shots"
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.6, delay: 0.3 }}
-            whileHover={{ scale: 1.03 }}
-            whileTap={{ scale: 0.98 }}
-            className="mt-12 rounded-full bg-white px-10 py-4 text-base font-medium text-black transition-opacity hover:opacity-90"
-          >
-            Start Learning — It&apos;s Free
-          </motion.a>
-
-          {/* Stats row */}
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.6, delay: 0.4 }}
-            className="mt-16 flex items-center gap-8 text-sm text-white/50"
-          >
-            <span>35+ Topics</span>
-            <span className="h-1 w-1 rounded-full bg-white/20" />
-            <span>6 Categories</span>
-            <span className="h-1 w-1 rounded-full bg-white/20" />
-            <span>Daily Insights</span>
-          </motion.div>
+      {menuOpen && (
+        <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="fixed inset-0 z-[19] bg-[#0a0a0f]/98 backdrop-blur-md flex flex-col items-center justify-center gap-8 md:hidden">
+          <button onClick={() => setMenuOpen(false)} className="absolute top-5 right-5 text-white" aria-label="Close"><X size={28} /></button>
+          <Link href="/history" onClick={() => setMenuOpen(false)} className="text-2xl text-white hover:text-[#c9a84c] transition-colors">Explore</Link>
+          <Link href="/favorites" onClick={() => setMenuOpen(false)} className="text-2xl text-white hover:text-[#c9a84c] transition-colors">Saved</Link>
+          <Link href="/profile" onClick={() => setMenuOpen(false)} className="text-2xl text-white hover:text-[#c9a84c] transition-colors">Profile</Link>
+          <Link href="/tip/1" onClick={() => setMenuOpen(false)} className="text-2xl text-white hover:text-[#c9a84c] transition-colors">Today</Link>
+          <Link href="/history" onClick={() => setMenuOpen(false)} className="mt-4 px-8 py-3 bg-[#c9a84c] text-[#0a0a0f] rounded-full text-base font-medium hover:bg-[#d4af37] transition-colors">
+            Start Thinking
+          </Link>
         </motion.div>
+      )}
+    </header>
+  );
+}
 
-        {/* Bottom gradient fade */}
-        <div className="pointer-events-none absolute bottom-0 left-0 right-0 h-40 bg-gradient-to-t from-black to-transparent z-20" />
-      </section>
+// ─── Background Video ────────────────────────────────────
+function BackgroundVideo() {
+  const videoRef = useRef<HTMLVideoElement>(null);
+  const targetTimeRef = useRef(0);
+  const currentXRef = useRef(0);
+  const isDesktopRef = useRef(false);
 
-      {/* ═══════════════════════════════════════════════════════
-          SECTION 2: The Problem — Why This Matters
-         ═══════════════════════════════════════════════════════ */}
-      <section className="relative z-10 px-6 py-24 md:py-32">
-        <div className="mx-auto max-w-5xl">
-          <motion.div
-            initial={{ opacity: 0, y: 30 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true }}
-            transition={{ duration: 0.6 }}
-            className="text-center"
-          >
-            <p className="mb-6 text-sm uppercase tracking-widest text-saiki-accent">The Problem</p>
-            <h2 className="text-3xl font-medium leading-tight text-white md:text-5xl" style={{ fontFamily: "'Instrument Serif', Georgia, serif" }}>
-              Your mind is being <span className="italic text-white/60">dismantled</span>
-              <br />by the modern world.
-            </h2>
-          </motion.div>
+  useEffect(() => {
+    const video = videoRef.current;
+    if (!video) return;
 
-          <motion.div
-            initial={{ opacity: 0, y: 30 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true }}
-            transition={{ duration: 0.6, delay: 0.2 }}
-            className="mt-16 grid gap-6 md:grid-cols-3"
-          >
-            {[
-              { icon: <Zap size={24} />, stat: '8 sec', label: 'Average attention span in 2023', sub: 'Down from 12 seconds in 2000' },
-              { icon: <Eye size={24} />, stat: '6 hrs', label: 'Daily screen time', sub: 'Mostly passive consumption' },
-              { icon: <Moon size={24} />, stat: '95%', label: 'Of thoughts are repeated daily', sub: 'And most are negative' },
-            ].map((item, i) => (
-              <div key={i} className="rounded-2xl border border-white/10 bg-white/[0.02] p-8">
-                <div className="mb-4 text-saiki-accent">{item.icon}</div>
-                <p className="text-4xl font-bold text-white">{item.stat}</p>
-                <p className="mt-2 text-sm text-white/70">{item.label}</p>
-                <p className="mt-1 text-xs text-white/40">{item.sub}</p>
-              </div>
-            ))}
-          </motion.div>
-        </div>
-      </section>
+    isDesktopRef.current = window.innerWidth >= 1024;
+    if (!isDesktopRef.current) return;
 
-      {/* ═══════════════════════════════════════════════════════
-          SECTION 3: What Saiki Covers — 6 Pillars
-         ═══════════════════════════════════════════════════════ */}
-      <section className="relative z-10 px-6 py-24 md:py-32">
-        <div className="mx-auto max-w-5xl">
-          <motion.div
-            initial={{ opacity: 0, y: 30 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true }}
-            className="text-center mb-16"
-          >
-            <p className="mb-6 text-sm uppercase tracking-widest text-saiki-accent">6 Pillars of Wisdom</p>
-            <h2 className="text-3xl font-medium text-white md:text-5xl" style={{ fontFamily: "'Instrument Serif', Georgia, serif" }}>
-              Everything your mind <span className="italic text-white/60">needs</span>
-            </h2>
-          </motion.div>
+    const onMove = (e: MouseEvent) => {
+      const dur = video.duration || 0;
+      if (!dur) return;
+      // Map mouse X position to video time (0 to duration)
+      targetTimeRef.current = (e.clientX / window.innerWidth) * dur;
+    };
 
-          <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-            {[
-              { icon: '📜', title: 'Philosophy', desc: 'Stoicism, Existentialism, Taoism — the operating system of the great thinkers.', color: '#c9a84c' },
-              { icon: '🧠', title: 'Psychology', desc: 'How your mind actually works — cognitive biases, conditioning, the unconscious.', color: '#a855f7' },
-              { icon: '🗺️', title: 'Mental Models', desc: 'Inversion, First Principles, Bayesian Thinking — frameworks for clear reasoning.', color: '#3b82f6' },
-              { icon: '🪞', title: 'Meta Thinking', desc: 'Thinking about thinking. Steel manning, epistemic humility, intellectual honesty.', color: '#06b6d4' },
-              { icon: '🧪', title: 'Thought Experiments', desc: 'Trolley Problem, Ship of Theseus, Chinese Room — hypotheticals that reveal truth.', color: '#f59e0b' },
-              { icon: '🔬', title: 'Empirical Evidence', desc: 'The experiments that prove ideas true — Milgram, Marshmallow, Dunbar.', color: '#10b981' },
-            ].map((pillar, i) => (
-              <motion.div
-                key={i}
-                initial={{ opacity: 0, y: 20 }}
-                whileInView={{ opacity: 1, y: 0 }}
-                viewport={{ once: true }}
-                transition={{ delay: i * 0.1 }}
-                className="rounded-2xl border border-white/10 bg-white/[0.02] p-6 transition-colors hover:border-white/20"
-              >
-                <span className="text-3xl">{pillar.icon}</span>
-                <h3 className="mt-4 text-lg font-medium text-white">{pillar.title}</h3>
-                <p className="mt-2 text-sm leading-relaxed text-white/60">{pillar.desc}</p>
-              </motion.div>
-            ))}
-          </div>
-        </div>
-      </section>
+    // Smooth lerp loop
+    let raf: number;
+    const loop = () => {
+      const current = video.currentTime;
+      const target = targetTimeRef.current;
+      // Lerp toward target (0.08 = smooth, 0.2 = snappy)
+      const next = current + (target - current) * 0.08;
+      // Only seek if difference is significant (>0.05s)
+      if (Math.abs(target - current) > 0.05) {
+        video.currentTime = next;
+      }
+      raf = requestAnimationFrame(loop);
+    };
 
-      {/* ═══════════════════════════════════════════════════════
-          SECTION 4: Daily Shots — Sample Tips
-         ═══════════════════════════════════════════════════════ */}
-      <section id="daily-shots" className="relative z-10 px-6 py-24 md:py-32">
-        <div className="mx-auto max-w-3xl">
-          {/* Greeting */}
-          <motion.div
-            initial={{ opacity: 0, y: 10 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true }}
-            className="mb-8"
-          >
-            <h2 className="text-3xl font-bold text-white md:text-4xl">
-              Today&apos;s <span className="text-gold-gradient">Shots</span>
-            </h2>
-            <p className="mt-2 text-white/50">
-              Sharp, clear insights. No fluff. Just truth.
-            </p>
-          </motion.div>
+    window.addEventListener('mousemove', onMove, { passive: true });
+    raf = requestAnimationFrame(loop);
 
-          {/* Streak Bar */}
-          <div className="mb-8">
-            <StreakBar streak={7} xp={285} totalRead={42} />
-          </div>
+    return () => {
+      window.removeEventListener('mousemove', onMove);
+      cancelAnimationFrame(raf);
+    };
+  }, []);
 
-          {/* Quote Hero */}
-          <QuoteHero />
+  useEffect(() => {
+    const video = videoRef.current;
+    if (video && window.innerWidth < 1024) {
+      video.autoplay = true;
+      video.play().catch(() => {});
+    }
+  }, []);
 
-          {/* Category Tabs */}
-          <div className="mb-6 flex items-center justify-between">
-            <div className="flex items-center gap-2">
-              <Sparkles size={18} className="text-saiki-accent" />
-              <h3 className="text-lg font-semibold text-white">Browse by Category</h3>
-            </div>
-          </div>
+  return (
+    <div className="absolute inset-0 z-0 overflow-hidden pointer-events-none">
+      <video ref={videoRef} muted playsInline preload="auto" className="absolute inset-0 w-full h-full object-cover" style={{ objectPosition: '50% 20%' }}>
+        <source src="https://d8j0ntlcm91z4.cloudfront.net/user_38xzZboKViGWJOttwIXH07lWA1P/hf_20260601_110537_3a579fa0-7bbc-4d94-9d25-0e816c7840f5.mp4" type="video/mp4" />
+      </video>
+      <div className="absolute inset-0 bg-gradient-to-r from-[#0a0a0f] via-[#0a0a0f]/60 to-transparent" />
+    </div>
+  );
+}
 
-          <CategoryTabs selected={category} onSelect={setCategory} />
+// ─── Page ────────────────────────────────────────────────
+export default function HomePage() {
+  const { displayed, done } = useTypewriter("Feed your mind.");
 
-          {/* Tips */}
-          <div className="space-y-4">
-            {tips.map((tip, i) => (
-              <TipCard key={tip.id} tip={tip} index={i} />
-            ))}
-          </div>
 
-          {/* CTA */}
-          <motion.div
-            initial={{ opacity: 0 }}
-            whileInView={{ opacity: 1 }}
-            viewport={{ once: true }}
-            className="mt-8 text-center"
-          >
-            <a
-              href="/history"
-              className="inline-flex items-center gap-2 rounded-full border border-white/20 bg-white/5 px-6 py-3 text-sm font-medium text-white/70 transition-all hover:border-saiki-accent/50 hover:text-saiki-accent"
-            >
-              <BookOpen size={16} />
-              Browse All Insights
-              <ArrowRight size={14} />
-            </a>
-          </motion.div>
-        </div>
-      </section>
+  return (
+    <div className="relative bg-[#0a0a0f] text-white selection:bg-[#c9a84c]/30 antialiased overflow-x-hidden min-h-screen">
+      <Navbar />
+      <BackgroundVideo />
 
-      {/* ═══════════════════════════════════════════════════════
-          SECTION 5: Mind Science — How Your Mind Works
-         ═══════════════════════════════════════════════════════ */}
-      <section className="relative z-10 px-6 py-24 md:py-32">
-        <div className="mx-auto max-w-5xl">
-          <motion.div
-            initial={{ opacity: 0, y: 30 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true }}
-            className="text-center mb-16"
-          >
-            <p className="mb-6 text-sm uppercase tracking-widest text-saiki-accent">Mind Science</p>
-            <h2 className="text-3xl font-medium text-white md:text-5xl" style={{ fontFamily: "'Instrument Serif', Georgia, serif" }}>
-              Understand the machine <span className="italic text-white/60">between</span> your ears
-            </h2>
-          </motion.div>
+      <main className="relative z-10 w-full max-w-7xl mx-auto px-6 min-h-screen flex flex-col justify-center py-32">
+        {/* Headline */}
+        <motion.h1
+          initial={{ opacity: 0, y: 30 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.8, ease: [0.25, 0.1, 0.25, 1] }}
+          className="text-[48px] md:text-[64px] lg:text-[80px] font-light tracking-[-0.03em] text-white leading-[1.05] mb-6 whitespace-pre-wrap"
+        >
+          {displayed}
+          {!done && <span className="inline-block w-[2px] h-[0.9em] bg-[#c9a84c] align-middle ml-1 animate-blink" />}
+        </motion.h1>
 
-          <div className="grid gap-6 md:grid-cols-2">
-            {[
-              {
-                title: 'The Subconscious',
-                stat: '95%',
-                desc: 'of your decisions are made by your subconscious mind before you\'re even aware of them. It processes 11 million bits of information per second — your conscious mind handles only 50.',
-                color: '#a855f7',
-              },
-              {
-                title: 'Neuroplasticity',
-                stat: '∞',
-                desc: 'Your brain rewires itself based on what you repeatedly think and do. Every habit, every thought pattern physically changes your neural pathways. You can literally reshape your brain at any age.',
-                color: '#3b82f6',
-              },
-              {
-                title: 'Cognitive Biases',
-                stat: '180+',
-                desc: 'Known mental shortcuts that distort your perception of reality. Confirmation bias, anchoring, availability heuristic — they run your life until you learn to see them.',
-                color: '#f59e0b',
-              },
-              {
-                title: 'The Default Mode Network',
-                stat: '30%',
-                desc: 'of your waking hours, your brain is in "default mode" — mind-wandering, daydreaming, replaying the past. This is where creativity lives, but also where anxiety breeds.',
-                color: '#10b981',
-              },
-            ].map((item, i) => (
-              <motion.div
-                key={i}
-                initial={{ opacity: 0, y: 20 }}
-                whileInView={{ opacity: 1, y: 0 }}
-                viewport={{ once: true }}
-                transition={{ delay: i * 0.1 }}
-                className="rounded-2xl border border-white/10 bg-white/[0.02] p-8"
-              >
-                <p className="text-5xl font-bold" style={{ color: item.color }}>{item.stat}</p>
-                <h3 className="mt-4 text-xl font-medium text-white">{item.title}</h3>
-                <p className="mt-3 text-sm leading-relaxed text-white/60">{item.desc}</p>
-              </motion.div>
-            ))}
-          </div>
-        </div>
-      </section>
+        {/* Subtitle */}
+        <motion.p
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.6, delay: 0.15 }}
+          className="text-[15px] md:text-[17px] text-white/40 leading-relaxed mb-10 whitespace-nowrap"
+        >
+          Choose your diet. Philosophy, psychology, and more — delivered daily.
+        </motion.p>
 
-      {/* ═══════════════════════════════════════════════════════
-          SECTION 6: CTA — Join Saiki
-         ═══════════════════════════════════════════════════════ */}
-      <section className="relative z-10 px-6 py-24 md:py-32">
-        <div className="mx-auto max-w-3xl text-center">
-          <motion.div
-            initial={{ opacity: 0, y: 30 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true }}
-          >
-            <h2 className="text-4xl font-medium text-white md:text-6xl" style={{ fontFamily: "'Instrument Serif', Georgia, serif" }}>
-              Your mind deserves
-              <br />
-              <span className="italic text-saiki-accent">better fuel.</span>
-            </h2>
-            <p className="mt-6 text-lg text-white/60">
-              One daily shot of wisdom. Philosophy, psychology, mental models, and the science of the mind.
-              <br />Sharp. Clear. No fluff.
-            </p>
-            <motion.a
-              href="/"
-              whileHover={{ scale: 1.03 }}
-              whileTap={{ scale: 0.98 }}
-              className="mt-10 inline-flex items-center gap-2 rounded-full bg-saiki-accent px-10 py-4 text-base font-medium text-black transition-opacity hover:opacity-90"
-            >
-              <Brain size={18} />
-              Start Your Streak
-            </motion.a>
-          </motion.div>
-        </div>
-      </section>
-
-      {/* Footer */}
-      <footer className="relative z-10 border-t border-white/10 px-6 py-8">
-        <div className="mx-auto flex max-w-5xl items-center justify-between">
-          <div className="flex items-center gap-2">
-            <span className="text-xl">🧠</span>
-            <span className="text-lg font-semibold text-white">Saiki</span>
-          </div>
-          <p className="text-xs text-white/30">© 2026 Saiki. Sharpen your mind.</p>
-        </div>
-      </footer>
+        {/* CTA */}
+        <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.6, delay: 0.3 }}>
+          <Link href="/history" className="inline-flex items-center gap-2 px-5 py-2.5 bg-[#c9a84c] text-[#0a0a0f] rounded-full text-[14px] font-medium hover:bg-[#d4af37] transition-all duration-200">
+            Start Thinking <ArrowRight size={16} />
+          </Link>
+        </motion.div>
+      </main>
     </div>
   );
 }

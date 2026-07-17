@@ -2,17 +2,11 @@ import type { Metadata, Viewport } from 'next';
 import './globals.css';
 
 export const metadata: Metadata = {
-  title: 'Saiki — Sharpen Your Mind',
-  description: 'Daily shots of philosophy, psychology, mental models, and mind science. Built for deep thinkers who refuse to let their minds go soft.',
-  manifest: '/manifest.json',
-  appleWebApp: {
-    capable: true,
-    statusBarStyle: 'black-translucent',
-    title: 'Saiki',
-  },
+  title: 'Saiki — Feed Your Mind',
+  description: 'One insight a day from history's greatest thinkers.'
   openGraph: {
-    title: 'Saiki — Sharpen Your Mind',
-    description: 'Philosophy, psychology, mental models, and empirical truth — delivered daily.',
+    title: 'Saiki',
+    description: '12 schools. One daily insight.',
     type: 'website',
   },
 };
@@ -21,7 +15,7 @@ export const viewport: Viewport = {
   themeColor: '#0a0a0f',
   width: 'device-width',
   initialScale: 1,
-  maximumScale: 1,
+  maximumScale: 5,
 };
 
 export default function RootLayout({
@@ -32,13 +26,10 @@ export default function RootLayout({
   return (
     <html lang="en" className="dark">
       <head>
-        <link rel="icon" href="/favicon.ico" sizes="any" />
-        <link rel="apple-touch-icon" href="/icons/icon-192.png" />
         <link rel="preconnect" href="https://fonts.googleapis.com" />
         <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
-        <link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet" />
       </head>
-      <body className="min-h-screen bg-saiki-bg antialiased">
+      <body className="min-h-screen bg-[#0a0a0f] text-white antialiased">
         {children}
       </body>
     </html>

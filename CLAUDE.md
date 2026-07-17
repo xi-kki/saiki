@@ -11,7 +11,7 @@
 - Backend: Next.js API Routes
 - Database: SQLite (libSQL/Turso for edge)
 - Auth: NextAuth v5 (Google + email magic link)
-- AI Content: Claude API (daily tip generation + personalization)
+- AI Content: Groq API (Llama 3.3 — fast, free tier, daily tip generation)
 - Push: Web Push API (VAPID keys)
 - Email: Resend (transactional + digest)
 - Hosting: Vercel (frontend) + Turso (DB)

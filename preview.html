@@ -169,18 +169,22 @@
       }, 38);
     }, 600);
 
-    // Video scrubbing (smooth lerp)
+    // Video scrubbing (throttled + adaptive lerp)
     const video = document.getElementById('bgVideo');
-    let targetTime = 0;
+    let targetTime = 0, lastSeek = 0;
     if (window.innerWidth >= 1024) {
       document.addEventListener('mousemove', e => {
         const dur = video.duration || 0;
         if (dur) targetTime = (e.clientX / window.innerWidth) * dur;
       });
       (function loop() {
+        const now = performance.now();
         const cur = video.currentTime;
-        if (Math.abs(targetTime - cur) > 0.05) {
-          video.currentTime = cur + (targetTime - cur) * 0.08;
+        const diff = targetTime - cur;
+        if (Math.abs(diff) > 0.02 && now - lastSeek > 16) {
+          const speed = Math.abs(diff) > 1 ? 0.2 : 0.12;
+          video.currentTime = cur + diff * speed;
+          lastSeek = now;
         }
         requestAnimationFrame(loop);
       })();

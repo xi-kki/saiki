@@ -95,23 +95,29 @@ function BackgroundVideo() {
     isDesktopRef.current = window.innerWidth >= 1024;
     if (!isDesktopRef.current) return;
 
+    let lastSeekTime = 0;
+    const SEEK_THROTTLE = 16; // ~60fps max seeks
+
     const onMove = (e: MouseEvent) => {
       const dur = video.duration || 0;
       if (!dur) return;
-      // Map mouse X position to video time (0 to duration)
       targetTimeRef.current = (e.clientX / window.innerWidth) * dur;
     };
 
     // Smooth lerp loop
     let raf: number;
     const loop = () => {
+      const now = performance.now();
       const current = video.currentTime;
       const target = targetTimeRef.current;
-      // Lerp toward target (0.08 = smooth, 0.2 = snappy)
-      const next = current + (target - current) * 0.08;
-      // Only seek if difference is significant (>0.05s)
-      if (Math.abs(target - current) > 0.05) {
-        video.currentTime = next;
+      const diff = target - current;
+
+      // Throttle seeks to avoid browser queuing
+      if (Math.abs(diff) > 0.02 && now - lastSeekTime > SEEK_THROTTLE) {
+        // Faster lerp (0.15) for responsiveness, with dead zone
+        const speed = Math.abs(diff) > 1 ? 0.2 : 0.12;
+        video.currentTime = current + diff * speed;
+        lastSeekTime = now;
       }
       raf = requestAnimationFrame(loop);
     };

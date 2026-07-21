@@ -18,7 +18,7 @@ export const users = sqliteTable('users', {
   preferredSchools: text('preferred_schools'), // JSON array
   pushSubscription: text('push_subscription'), // JSON
   emailDigest: integer('email_digest', { mode: 'boolean' }).default(true),
-  createdAt: integer('created_at', { mode: 'timestamp_ms' }).default(Date.now),
+  createdAt: integer('created_at', { mode: 'timestamp_ms' }).$defaultFn(() => new Date()),
 });
 
 // ─── Accounts (NextAuth) ─────────────────────────────────
@@ -62,7 +62,7 @@ export const tips = sqliteTable('tips', {
   // Meta
   generatedBy: text('generated_by').default('ai'), // ai, curated
   publishedAt: integer('published_at', { mode: 'timestamp_ms' }),
-  createdAt: integer('created_at', { mode: 'timestamp_ms' }).default(Date.now),
+  createdAt: integer('created_at', { mode: 'timestamp_ms' }).$defaultFn(() => new Date()),
 });
 
 // ─── User Favorites ──────────────────────────────────────
@@ -71,7 +71,7 @@ export const favorites = sqliteTable('favorites', {
   userId: text('user_id').notNull().references(() => users.id, { onDelete: 'cascade' }),
   tipId: text('tip_id').notNull().references(() => tips.id, { onDelete: 'cascade' }),
   note: text('note'), // Personal reflection
-  createdAt: integer('created_at', { mode: 'timestamp_ms' }).default(Date.now),
+  createdAt: integer('created_at', { mode: 'timestamp_ms' }).$defaultFn(() => new Date()),
 });
 
 // ─── Reading History ─────────────────────────────────────
@@ -79,7 +79,7 @@ export const readingHistory = sqliteTable('reading_history', {
   id: text('id').primaryKey(),
   userId: text('user_id').notNull().references(() => users.id, { onDelete: 'cascade' }),
   tipId: text('tip_id').notNull().references(() => tips.id, { onDelete: 'cascade' }),
-  readAt: integer('read_at', { mode: 'timestamp_ms' }).default(Date.now),
+  readAt: integer('read_at', { mode: 'timestamp_ms' }).$defaultFn(() => new Date()),
   timeSpent: integer('time_spent'), // seconds
 });
 
@@ -100,7 +100,7 @@ export const pushSubscriptions = sqliteTable('push_subscriptions', {
   endpoint: text('endpoint').notNull(),
   p256dh: text('p256dh').notNull(),
   auth: text('auth').notNull(),
-  createdAt: integer('created_at', { mode: 'timestamp_ms' }).default(Date.now),
+  createdAt: integer('created_at', { mode: 'timestamp_ms' }).$defaultFn(() => new Date()),
 });
 
 // ─── Relations ───────────────────────────────────────────

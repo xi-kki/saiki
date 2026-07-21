@@ -9,8 +9,6 @@ export default function CategoryTabs({
   selected: ContentCategory | 'all';
   onSelect: (cat: ContentCategory | 'all') => void;
 }) {
-  const categories = Object.entries(CONTENT_CATEGORIES);
-
   return (
     <div className="mb-6">
       <div className="flex items-center gap-2 overflow-x-auto pb-2 scrollbar-hide">
@@ -24,22 +22,22 @@ export default function CategoryTabs({
         >
           ✨ All
         </button>
-        {categories.map(([key, cat]) => (
+        {CONTENT_CATEGORIES.map((cat) => (
           <button
-            key={key}
-            onClick={() => onSelect(key as ContentCategory)}
+            key={cat.id}
+            onClick={() => onSelect(cat)}
             className={`shrink-0 rounded-full px-4 py-2 text-xs font-medium transition-all ${
-              selected === key
+              selected === cat || (typeof selected === 'object' && selected?.id === cat.id)
                 ? 'text-saiki-bg'
                 : 'border border-saiki-border/50 bg-saiki-card/50 text-saiki-muted hover:text-saiki-text'
             }`}
             style={
-              selected === key
+              selected === cat || (typeof selected === 'object' && selected?.id === cat.id)
                 ? { backgroundColor: cat.color }
                 : { borderColor: `${cat.color}30` }
             }
           >
-            {cat.icon} {cat.name}
+            {cat.name}
           </button>
         ))}
       </div>

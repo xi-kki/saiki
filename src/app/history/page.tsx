@@ -105,7 +105,7 @@ const demoFeed = [
 export default function HistoryPage() {
   const [category, setCategory] = useState<ContentCategory | 'all'>('all');
 
-  const filtered = category === 'all' ? demoFeed : demoFeed.filter((t) => t.category === category);
+  const filtered = category === 'all' ? demoFeed : demoFeed.filter((t) => t.category === (typeof category === 'string' ? category : category.id));
 
   return (
     <div className="min-h-screen">

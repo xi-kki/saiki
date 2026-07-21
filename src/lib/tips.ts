@@ -1,5 +1,5 @@
 import { db } from './db';
-import { tips, favorites, readingHistory, dailyStreaks } from '@/db/schema';
+import { tips, favorites, readingHistory, dailyStreaks, users } from '@/db/schema';
 import { eq, and, desc, sql } from 'drizzle-orm';
 import { getToday, generateId, calculateXp } from './utils';
 
@@ -68,8 +68,8 @@ export async function recordReading(userId: string, tipId: string) {
     await db
       .update(dailyStreaks)
       .set({
-        tipsRead: existing.tipsRead + 1,
-        xpEarned: existing.xpEarned + 10,
+        tipsRead: (existing.tipsRead ?? 0) + 1,
+        xpEarned: (existing.xpEarned ?? 0) + 10,
         completed: true,
       })
       .where(eq(dailyStreaks.id, existing.id));
@@ -91,15 +91,16 @@ export async function recordReading(userId: string, tipId: string) {
 
   if (user) {
     const newStreak = await calculateStreak(userId);
-    const xp = calculateXp(user.totalRead + 1, newStreak, false);
+    const totalRead = (user.totalRead ?? 0) + 1;
+    const xp = calculateXp('general', newStreak);
 
     await db
       .update(users)
       .set({
-        totalRead: user.totalRead + 1,
+        totalRead,
         streak: newStreak,
-        bestStreak: Math.max(user.bestStreak || 0, newStreak),
-        xp: user.xp + xp,
+        bestStreak: Math.max(user.bestStreak ?? 0, newStreak),
+        xp: (user.xp ?? 0) + xp,
       })
       .where(eq(users.id, userId));
   }

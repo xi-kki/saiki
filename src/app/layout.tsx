@@ -3,7 +3,7 @@ import './globals.css';
 
 export const metadata: Metadata = {
   title: 'Saiki — Feed Your Mind',
-  description: 'One insight a day from history's greatest thinkers.'
+  description: 'One insight a day from history\'s greatest thinkers.',
   openGraph: {
     title: 'Saiki',
     description: '12 schools. One daily insight.',

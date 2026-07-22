@@ -5,12 +5,15 @@ if (typeof window !== 'undefined') {
   throw new Error('Groq client should only be used server-side');
 }
 
-const groq = new Groq({
-  apiKey: process.env.GROQ_API_KEY,
-});
+let groqInstance: Groq | null = null;
 
-if (!process.env.GROQ_API_KEY) {
-  console.warn('⚠️ GROQ_API_KEY not set — using fallback tips');
+function getGroq(): Groq {
+  if (!groqInstance) {
+    groqInstance = new Groq({
+      apiKey: process.env.GROQ_API_KEY,
+    });
+  }
+  return groqInstance;
 }
 
 // ─── School Definitions ──────────────────────────────────
@@ -119,7 +122,7 @@ Return ONLY valid JSON with these fields:
 Make it feel like wisdom from a wise friend, not a textbook. Be specific, not generic.`;
 
   try {
-    const completion = await groq.chat.completions.create({
+    const completion = await getGroq().chat.completions.create({
       messages: [{ role: 'user', content: prompt }],
       model: 'llama-3.3-70b-versatile',
       temperature: 0.8,

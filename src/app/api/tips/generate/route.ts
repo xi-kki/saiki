@@ -3,6 +3,8 @@ import { generateTip, generateDailyTips, type SchoolId } from '@/lib/groq';
 import { checkRateLimit } from '@/lib/rate-limit';
 import { sanitize, isValidSchoolId } from '@/lib/sanitize';
 
+export const dynamic = 'force-dynamic';
+
 // ─── POST /api/tips/generate ─────────────────────────────
 // Generate a single tip for a school
 export async function POST(request: NextRequest) {

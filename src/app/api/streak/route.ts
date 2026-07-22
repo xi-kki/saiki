@@ -1,6 +1,8 @@
 import { NextResponse } from 'next/server';
 import { db } from '@/lib/db';
 import { users, dailyStreaks } from '@/db/schema';
+
+export const dynamic = 'force-dynamic';
 import { eq, and, desc } from 'drizzle-orm';
 import { getToday } from '@/lib/utils';
 

@@ -1,15 +1,14 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { useParams, useRouter } from 'next/navigation';
+import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { motion } from 'framer-motion';
-import { ArrowLeft, Heart, Share2, BookOpen, Brain, Clock, ArrowRight, Sparkles } from 'lucide-react';
+import { ArrowLeft, Heart, Share2, BookOpen, Brain, Clock, RefreshCw, Sparkles } from 'lucide-react';
 import Header from '@/components/Header';
 
 const SCHOOLS: Record<string, { name: string; color: string; icon: string }> = {
   stoicism: { name: 'Stoicism', color: '#c9a84c', icon: '🏛️' },
-  existentialism: { name: 'Existentialism', color: '#7c6aef', icon: '🌀' },
   buddhist: { name: 'Buddhism', color: '#f4c542', icon: '☸️' },
   taoism: { name: 'Taoism', color: '#4ecdc4', icon: '☯️' },
   absurdist: { name: 'Absurdism', color: '#ff6b6b', icon: '🎭' },
@@ -20,7 +19,7 @@ const SCHOOLS: Record<string, { name: string; color: string; icon: string }> = {
   humanism: { name: 'Humanism', color: '#20c997', icon: '🤝' },
   nihilism: { name: 'Nihilism', color: '#6c757d', icon: '🌑' },
   pragmatism: { name: 'Pragmatism', color: '#dda0dd', icon: '🔧' },
-  virtueEthics: { name: 'Virtue Ethics', color: '#fd7e14', icon: '⚖️' },
+  existentialism: { name: 'Existentialism', color: '#7c6aef', icon: '🌀' },
 };
 
 interface Tip {
@@ -42,8 +41,7 @@ function estimateReadTime(content: string): number {
   return Math.max(1, Math.ceil(words / 200));
 }
 
-export default function TipPage() {
-  const params = useParams();
+export default function TodayPage() {
   const router = useRouter();
   const [tip, setTip] = useState<Tip | null>(null);
   const [loading, setLoading] = useState(true);
@@ -52,21 +50,28 @@ export default function TipPage() {
   const [reflection, setReflection] = useState('');
 
   useEffect(() => {
-    async function load() {
-      try {
-        const res = await fetch(`/api/tips/${params.id}`);
-        if (res.ok) {
-          const data = await res.json();
-          setTip(data.tip);
+    loadRandomTip();
+  }, []);
+
+  async function loadRandomTip() {
+    setLoading(true);
+    try {
+      const res = await fetch('/api/tips?limit=50');
+      if (res.ok) {
+        const data = await res.json();
+        const tips = data.tips || [];
+        if (tips.length > 0) {
+          // Pick a random tip
+          const randomIndex = Math.floor(Math.random() * tips.length);
+          setTip(tips[randomIndex]);
         }
-      } catch (err) {
-        console.error('Failed to load tip:', err);
-      } finally {
-        setLoading(false);
       }
+    } catch (err) {
+      console.error('Failed to load tip:', err);
+    } finally {
+      setLoading(false);
     }
-    if (params.id) load();
-  }, [params.id]);
+  }
 
   const handleShare = async () => {
     if (!tip) return;
@@ -81,17 +86,26 @@ export default function TipPage() {
 
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="w-8 h-8 border-2 border-[#c9a84c]/30 border-t-[#c9a84c] rounded-full animate-spin" />
+      <div className="min-h-screen">
+        <Header />
+        <div className="flex items-center justify-center min-h-screen">
+          <div className="text-center">
+            <div className="w-12 h-12 border-2 border-[#c9a84c]/30 border-t-[#c9a84c] rounded-full animate-spin mx-auto mb-4" />
+            <p className="text-saiki-muted text-sm">Preparing your daily insight...</p>
+          </div>
+        </div>
       </div>
     );
   }
 
   if (!tip) {
     return (
-      <div className="min-h-screen flex flex-col items-center justify-center gap-4">
-        <p className="text-saiki-muted">Tip not found</p>
-        <Link href="/history" className="text-[#c9a84c] hover:underline">Back to Feed</Link>
+      <div className="min-h-screen">
+        <Header />
+        <div className="flex flex-col items-center justify-center min-h-screen gap-4">
+          <p className="text-saiki-muted">No tips available yet</p>
+          <Link href="/history" className="text-[#c9a84c] hover:underline">Browse the Feed</Link>
+        </div>
       </div>
     );
   }
@@ -104,21 +118,46 @@ export default function TipPage() {
       <Header />
 
       <main className="mx-auto max-w-2xl px-4 pt-24 pb-12">
-        {/* Back button */}
-        <motion.button
-          initial={{ opacity: 0, x: -10 }}
-          animate={{ opacity: 1, x: 0 }}
-          onClick={() => router.back()}
-          className="mb-6 flex items-center gap-2 text-sm text-saiki-muted transition-colors hover:text-saiki-text"
+        {/* Top Bar */}
+        <motion.div
+          initial={{ opacity: 0, y: -10 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="flex items-center justify-between mb-8"
         >
-          <ArrowLeft size={16} />
-          Back
-        </motion.button>
+          <button
+            onClick={() => router.back()}
+            className="flex items-center gap-2 text-sm text-saiki-muted transition-colors hover:text-saiki-text"
+          >
+            <ArrowLeft size={16} />
+            Back
+          </button>
+
+          <button
+            onClick={loadRandomTip}
+            className="flex items-center gap-2 text-sm text-saiki-accent transition-colors hover:text-[#d4af37]"
+          >
+            <RefreshCw size={14} />
+            New Insight
+          </button>
+        </motion.div>
+
+        {/* Today Badge */}
+        <motion.div
+          initial={{ opacity: 0, scale: 0.9 }}
+          animate={{ opacity: 1, scale: 1 }}
+          className="mb-6 flex justify-center"
+        >
+          <div className="inline-flex items-center gap-2 rounded-full border border-saiki-accent/30 bg-saiki-accent/10 px-4 py-2">
+            <Sparkles size={14} className="text-saiki-accent" />
+            <span className="text-sm font-medium text-saiki-accent">Today&apos;s Insight</span>
+          </div>
+        </motion.div>
 
         {/* Header */}
         <motion.div
           initial={{ opacity: 0, y: 10 }}
           animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.1 }}
           className="mb-8"
         >
           <div className="mb-4 flex items-center gap-2 flex-wrap">
@@ -131,12 +170,9 @@ export default function TipPage() {
             <span className="rounded-full bg-saiki-border/50 px-2 py-0.5 text-xs text-saiki-muted capitalize">
               {tip.category}
             </span>
-            <span className="rounded-full bg-saiki-border/50 px-2 py-0.5 text-xs text-saiki-muted capitalize">
-              {tip.difficulty}
-            </span>
           </div>
 
-          <h1 className="mb-3 text-3xl font-bold leading-tight text-saiki-text font-serif">
+          <h1 className="mb-3 text-3xl md:text-4xl font-bold leading-tight text-saiki-text font-serif">
             {tip.title}
           </h1>
 
@@ -150,7 +186,7 @@ export default function TipPage() {
         <motion.div
           initial={{ opacity: 0, y: 10 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.1 }}
+          transition={{ delay: 0.2 }}
           className="mb-8 rounded-xl border border-saiki-accent/20 bg-saiki-accent/5 p-5"
         >
           <div className="flex items-start gap-3">
@@ -166,8 +202,8 @@ export default function TipPage() {
         <motion.article
           initial={{ opacity: 0, y: 10 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.2 }}
-          className="prose prose-invert prose-pie max-w-none"
+          transition={{ delay: 0.3 }}
+          className="mb-10"
         >
           {tip.content.split('\n\n').map((para, i) => (
             <p
@@ -183,8 +219,8 @@ export default function TipPage() {
         <motion.div
           initial={{ opacity: 0, y: 10 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.3 }}
-          className="mt-10 flex items-center justify-between rounded-xl border border-saiki-border/50 bg-saiki-card/50 p-4"
+          transition={{ delay: 0.4 }}
+          className="flex items-center justify-between rounded-xl border border-saiki-border/50 bg-saiki-card/50 p-4"
         >
           <div className="flex items-center gap-4">
             <button
@@ -213,7 +249,7 @@ export default function TipPage() {
         <motion.div
           initial={{ opacity: 0, y: 10 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.4 }}
+          transition={{ delay: 0.5 }}
           className="mt-6 rounded-xl border border-saiki-border/30 bg-saiki-card/30 p-5"
         >
           <h3 className="mb-2 text-sm font-medium text-saiki-text">💭 Reflection</h3>
@@ -243,21 +279,27 @@ export default function TipPage() {
           )}
         </motion.div>
 
-        {/* Next Tip */}
+        {/* Navigation */}
         <motion.div
           initial={{ opacity: 0, y: 10 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.5 }}
-          className="mt-8"
+          transition={{ delay: 0.6 }}
+          className="mt-8 grid grid-cols-2 gap-3"
         >
           <Link
             href="/history"
-            className="flex items-center justify-center gap-2 w-full rounded-xl border border-saiki-accent/30 bg-saiki-accent/5 p-4 text-sm font-medium text-saiki-accent transition-colors hover:bg-saiki-accent/10"
+            className="flex items-center justify-center gap-2 rounded-xl border border-saiki-border/50 bg-saiki-card/50 p-4 text-sm font-medium text-saiki-text transition-colors hover:border-saiki-accent/30"
+          >
+            <BookOpen size={16} />
+            Browse Feed
+          </Link>
+          <button
+            onClick={loadRandomTip}
+            className="flex items-center justify-center gap-2 rounded-xl border border-saiki-accent/30 bg-saiki-accent/5 p-4 text-sm font-medium text-saiki-accent transition-colors hover:bg-saiki-accent/10"
           >
             <Sparkles size={16} />
-            Explore More Insights
-            <ArrowRight size={14} />
-          </Link>
+            Another Insight
+          </button>
         </motion.div>
       </main>
     </div>

@@ -3,7 +3,7 @@
 import { useState, useEffect, useRef } from 'react';
 import Link from 'next/link';
 import { motion } from 'framer-motion';
-import { ArrowRight, X } from 'lucide-react';
+import { ArrowRight, X, Sparkles } from 'lucide-react';
 
 // ─── useTypewriter ───────────────────────────────────────
 function useTypewriter(text: string, speed = 38, delay = 600) {
@@ -52,10 +52,10 @@ function Navbar() {
         <span className="opacity-30">·</span>
         <Link href="/profile" className="hover:text-white transition-colors duration-200">Profile</Link>
         <span className="opacity-30">·</span>
-        <Link href="/tip/1" className="hover:text-white transition-colors duration-200">Today</Link>
+        <Link href="/today" className="hover:text-white transition-colors duration-200">Today</Link>
       </nav>
 
-      <Link href="/history" className="hidden md:flex items-center gap-2 text-[15px] text-white hover:text-[#c9a84c] transition-colors duration-200">
+      <Link href="/today" className="hidden md:flex items-center gap-2 text-[15px] text-white hover:text-[#c9a84c] transition-colors duration-200">
         Start Thinking <ArrowRight size={14} />
       </Link>
 
@@ -71,8 +71,8 @@ function Navbar() {
           <Link href="/history" onClick={() => setMenuOpen(false)} className="text-2xl text-white hover:text-[#c9a84c] transition-colors">Explore</Link>
           <Link href="/favorites" onClick={() => setMenuOpen(false)} className="text-2xl text-white hover:text-[#c9a84c] transition-colors">Saved</Link>
           <Link href="/profile" onClick={() => setMenuOpen(false)} className="text-2xl text-white hover:text-[#c9a84c] transition-colors">Profile</Link>
-          <Link href="/tip/1" onClick={() => setMenuOpen(false)} className="text-2xl text-white hover:text-[#c9a84c] transition-colors">Today</Link>
-          <Link href="/history" onClick={() => setMenuOpen(false)} className="mt-4 px-8 py-3 bg-[#c9a84c] text-[#0a0a0f] rounded-full text-base font-medium hover:bg-[#d4af37] transition-colors">
+          <Link href="/today" onClick={() => setMenuOpen(false)} className="text-2xl text-white hover:text-[#c9a84c] transition-colors">Today</Link>
+          <Link href="/today" onClick={() => setMenuOpen(false)} className="mt-4 px-8 py-3 bg-[#c9a84c] text-[#0a0a0f] rounded-full text-base font-medium hover:bg-[#d4af37] transition-colors">
             Start Thinking
           </Link>
         </motion.div>
@@ -81,11 +81,10 @@ function Navbar() {
   );
 }
 
-// ─── Background Video ────────────────────────────────────
+// ─── Background Video (smooth cursor tracking) ───────────
 function BackgroundVideo() {
   const videoRef = useRef<HTMLVideoElement>(null);
   const targetTimeRef = useRef(0);
-  const currentXRef = useRef(0);
   const isDesktopRef = useRef(false);
 
   useEffect(() => {
@@ -95,8 +94,9 @@ function BackgroundVideo() {
     isDesktopRef.current = window.innerWidth >= 1024;
     if (!isDesktopRef.current) return;
 
+    const SEEK_INTERVAL = 32;
     let lastSeekTime = 0;
-    const SEEK_THROTTLE = 16; // ~60fps max seeks
+    let animFrameId: number;
 
     const onMove = (e: MouseEvent) => {
       const dur = video.duration || 0;
@@ -104,30 +104,26 @@ function BackgroundVideo() {
       targetTimeRef.current = (e.clientX / window.innerWidth) * dur;
     };
 
-    // Smooth lerp loop
-    let raf: number;
     const loop = () => {
       const now = performance.now();
       const current = video.currentTime;
       const target = targetTimeRef.current;
       const diff = target - current;
 
-      // Throttle seeks to avoid browser queuing
-      if (Math.abs(diff) > 0.02 && now - lastSeekTime > SEEK_THROTTLE) {
-        // Faster lerp (0.15) for responsiveness, with dead zone
-        const speed = Math.abs(diff) > 1 ? 0.2 : 0.12;
-        video.currentTime = current + diff * speed;
+      if (Math.abs(diff) > 0.01 && now - lastSeekTime > SEEK_INTERVAL) {
+        const ease = 0.18;
+        video.currentTime = current + diff * ease;
         lastSeekTime = now;
       }
-      raf = requestAnimationFrame(loop);
+      animFrameId = requestAnimationFrame(loop);
     };
 
     window.addEventListener('mousemove', onMove, { passive: true });
-    raf = requestAnimationFrame(loop);
+    animFrameId = requestAnimationFrame(loop);
 
     return () => {
       window.removeEventListener('mousemove', onMove);
-      cancelAnimationFrame(raf);
+      cancelAnimationFrame(animFrameId);
     };
   }, []);
 
@@ -141,7 +137,14 @@ function BackgroundVideo() {
 
   return (
     <div className="absolute inset-0 z-0 overflow-hidden pointer-events-none">
-      <video ref={videoRef} muted playsInline preload="auto" className="absolute inset-0 w-full h-full object-cover" style={{ objectPosition: '50% 20%' }}>
+      <video
+        ref={videoRef}
+        muted
+        playsInline
+        preload="auto"
+        className="absolute inset-0 w-full h-full object-cover gpu-accelerated"
+        style={{ objectPosition: '50% 20%' }}
+      >
         <source src="https://d8j0ntlcm91z4.cloudfront.net/user_38xzZboKViGWJOttwIXH07lWA1P/hf_20260601_110537_3a579fa0-7bbc-4d94-9d25-0e816c7840f5.mp4" type="video/mp4" />
       </video>
       <div className="absolute inset-0 bg-gradient-to-r from-[#0a0a0f] via-[#0a0a0f]/60 to-transparent" />
@@ -152,7 +155,6 @@ function BackgroundVideo() {
 // ─── Page ────────────────────────────────────────────────
 export default function HomePage() {
   const { displayed, done } = useTypewriter("Feed your mind.");
-
 
   return (
     <div className="relative bg-[#0a0a0f] text-white selection:bg-[#c9a84c]/30 antialiased overflow-x-hidden min-h-screen">
@@ -182,9 +184,12 @@ export default function HomePage() {
         </motion.p>
 
         {/* CTA */}
-        <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.6, delay: 0.3 }}>
-          <Link href="/history" className="inline-flex items-center gap-2 px-5 py-2.5 bg-[#c9a84c] text-[#0a0a0f] rounded-full text-[14px] font-medium hover:bg-[#d4af37] transition-all duration-200">
-            Start Thinking <ArrowRight size={16} />
+        <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.6, delay: 0.3 }} className="flex items-center gap-4">
+          <Link href="/today" className="inline-flex items-center gap-2 px-5 py-2.5 bg-[#c9a84c] text-[#0a0a0f] rounded-full text-[14px] font-medium hover:bg-[#d4af37] transition-all duration-200">
+            <Sparkles size={16} /> Today's Insight
+          </Link>
+          <Link href="/history" className="inline-flex items-center gap-2 px-5 py-2.5 border border-white/20 text-white rounded-full text-[14px] font-medium hover:border-[#c9a84c]/50 hover:text-[#c9a84c] transition-all duration-200">
+            Explore All <ArrowRight size={14} />
           </Link>
         </motion.div>
       </main>

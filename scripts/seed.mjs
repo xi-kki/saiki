@@ -391,7 +391,7 @@ async function seed() {
   for (const tip of seedTips) {
     const now = Date.now();
     await client.execute({
-      sql: `INSERT INTO tips (id, title, content, summary, school, thinker, source, category, difficulty, likes, views, generated_by, published_at, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'curated', ?, ?)`,
+      sql: `INSERT OR REPLACE INTO tips (id, title, content, summary, school, thinker, source, category, difficulty, likes, views, generated_by, published_at, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'curated', ?, ?)`,
       args: [tip.id, tip.title, tip.content, tip.summary, tip.school, tip.thinker, tip.source, tip.category, tip.difficulty, tip.likes, tip.views, now, now],
     });
     console.log(`  ✅ ${tip.title} — ${tip.thinker}`);

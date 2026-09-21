@@ -45,7 +45,7 @@ export default function HistoryPage() {
     loadTips();
   }, []);
 
-  const filtered = category === 'all' ? tips : tips.filter((t) => t.category === category);
+  const filtered = category === 'all' ? tips : tips.filter((t) => t.category === category.id);
 
   // Count unique schools and categories
   const uniqueSchools = new Set(tips.map((t) => t.school)).size;
